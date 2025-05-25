@@ -1,6 +1,8 @@
 export interface Env {
 	LLM_API_ENDPOINT:string;
 	LLM_API_KEY:string;
+
+	BLOG_ABST_KV: KVNamespace;
 }
 
 export interface ReqBody {
@@ -47,6 +49,25 @@ export default {
 			// キャッシュを使用する場合
 			if (reqBody.useCache) {
 				// KVを検索
+				const cachedAbstract: string | null = await env.BLOG_ABST_KV.get(reqBody.entryId);
+				if (cachedAbstract !== null) {
+					// キャッシュが存在する場合、キャッシュを使用してレスポンスを返す
+					const res: ResBody = {
+						status: "S",
+						code: "000",
+						abstract: cachedAbstract,
+						useCache: true,
+						saveCache: false
+					}
+
+					return new Response(JSON.stringify(res), {
+						headers: {
+							"Access-Control-Allow-Origin": "*",
+							"Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
+							"Content-Type": "application/json; charset=utf-8"
+						}
+					});
+				}
 
 			}
 
@@ -74,6 +95,7 @@ export default {
 			// キャッシュに保存する場合
 			if (reqBody.saveCache) {
 				// KVに保存
+				await env.BLOG_ABST_KV.put(reqBody.entryId, abstract);
 			}
 
 			const res: ResBody = {
@@ -81,7 +103,7 @@ export default {
 				code: "000",
 				abstract: abstract,
 				useCache: false,
-				saveCache: false
+				saveCache: reqBody.saveCache
 			}
 
 			return new Response(JSON.stringify(res), {
