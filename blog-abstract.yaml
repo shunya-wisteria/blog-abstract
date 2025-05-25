@@ -1,0 +1,95 @@
+openapi: 3.0.0
+info:
+  title: Blog Abstract API
+  version: 1.0.0
+  description: ブログ記事を200字以内で要約するAPI
+servers:
+  - url: https://blog-abstract.swisteria.workers.dev
+    description: 本番環境
+  - url: http://127.0.0.1:8787
+    description: ローカル開発環境
+
+paths:
+  /:
+    post:
+      summary: ブログ記事の要約を生成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entryId:
+                  type: string
+                  description: 記事の一意ID
+                entryBody:
+                  type: string
+                  description: 要約対象のブログ本文
+                useCache:
+                  type: boolean
+                  description: キャッシュ利用フラグ
+                saveCache:
+                  type: boolean
+                  description: 要約をキャッシュ保存するか
+              required:
+                - entryId
+                - entryBody
+                - useCache
+                - saveCache
+      responses:
+        '200':
+          description: 正常応答またはキャッシュヒット
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: ステータス ("S":成功, "E":エラー)
+                  code:
+                    type: string
+                    description: ステータスコード ("000":正常, "900":APIエラー, "999":メソッドエラー)
+                  abstract:
+                    type: string
+                    description: 要約本文
+                  useCache:
+                    type: boolean
+                    description: キャッシュ利用有無
+                  saveCache:
+                    type: boolean
+                    description: キャッシュ保存有無
+                required:
+                  - status
+                  - code
+                  - abstract
+                  - useCache
+                  - saveCache
+        '405':
+          description: メソッド不正（POST以外）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResBody'
+components:
+  schemas:
+    ResBody:
+      type: object
+      properties:
+        status:
+          type: string
+        code:
+          type: string
+        abstract:
+          type: string
+        useCache:
+          type: boolean
+        saveCache:
+          type: boolean
+      required:
+        - status
+        - code
+        - abstract
+        - useCache
+        - saveCache
