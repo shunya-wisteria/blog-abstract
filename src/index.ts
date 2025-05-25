@@ -35,6 +35,7 @@ export default {
 			}
 
 			return new Response(JSON.stringify(res), {
+				status: 405,
 				headers: {
 					"Access-Control-Allow-Origin": "*",
 					"Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
