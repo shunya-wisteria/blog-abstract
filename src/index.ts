@@ -1,6 +1,6 @@
 export interface Env {
-	LLM_API_ENDPOINT:string;
-	LLM_API_KEY:string;
+	LLM_API_ENDPOINT: string;
+	LLM_API_KEY: string;
 
 	BLOG_ABST_KV: KVNamespace;
 }
@@ -21,11 +21,22 @@ export interface ResBody {
 }
 
 export default {
-	async fetch(request, env:Env, ctx): Promise<Response> {
+	async fetch(request, env: Env, ctx): Promise<Response> {
 		const PronptBase: string = "下記ブログの記事を200字以内に要約してしてください。<p>タグでくくったhtmlをテキスト形式で出力し、markdownのcode blockは使用しないでください。\n";
 
+		if (request.method === 'OPTIONS') {
+			return new Response(null, {
+				status: 200,
+				headers: {
+					"Access-Control-Allow-Origin": "*",
+					"Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
+					"Access-Control-Allow-Headers": "Content-Type",
+					"Content-Type": "application/json; charset=utf-8"
+				}
+			});
+		}
 		// リクエストメソッドがPOSTでない場合はエラーを返す
-		if (request.method !== 'POST') {
+		else if (request.method !== 'POST') {
 			const res: ResBody = {
 				status: "E",
 				code: "999",
@@ -75,22 +86,22 @@ export default {
 			// キャッシュを使用しない場合、Gemini APIを呼び出す
 			const abstract: string = await CreateAbstract(reqBody, env);
 			// APIエラーの場合終了
-			if(abstract === "") {
+			if (abstract === "") {
 				const res: ResBody = {
-				status: "E",
-				code: "900",
-				abstract: "",
-				useCache: false,
-				saveCache: false
-			}
-
-			return new Response(JSON.stringify(res), {
-				headers: {
-					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
-					"Content-Type": "application/json; charset=utf-8"
+					status: "E",
+					code: "900",
+					abstract: "",
+					useCache: false,
+					saveCache: false
 				}
-			});
+
+				return new Response(JSON.stringify(res), {
+					headers: {
+						"Access-Control-Allow-Origin": "*",
+						"Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
+						"Content-Type": "application/json; charset=utf-8"
+					}
+				});
 			}
 
 			// キャッシュに保存する場合
@@ -125,7 +136,7 @@ export default {
 		// 戻り値：
 		//	 要約文字列
 		//-----------------------
-		async function CreateAbstract(reqBody:ReqBody, env:Env):Promise<string>{
+		async function CreateAbstract(reqBody: ReqBody, env: Env): Promise<string> {
 			// プロンプト作成
 			const pronpt = PronptBase + reqBody.entryBody;
 			// API呼び出しのための設定
@@ -157,12 +168,12 @@ export default {
 			if (apiRes.status !== 200) {
 				return "";
 			}
-			
-			const apiResBody:any = await apiRes.json();
-			const abstract:string = apiResBody.candidates[0].content.parts[0].text;
-			
+
+			const apiResBody: any = await apiRes.json();
+			const abstract: string = apiResBody.candidates[0].content.parts[0].text;
+
 			return abstract;
 		}
 	},
-	
+
 } satisfies ExportedHandler<Env>;
